@@ -14,13 +14,41 @@ class SelfAttention(nn.Module):
         K = self.k(x)  # [B, T, D]
         V = self.v(x)  # [B, T, D]
         
-        d_k = len(K.size())
+        d_k = K.size(-1)
         scores = torch.matmul(Q, K.transpose(1, 2)) / np.sqrt(d_k)   # [B, T, T]
         weights = torch.softmax(scores, dim=-1)
         attention = torch.matmul(weights, V)
         
         return attention, weights
 
+class MultiHeadSelfAttention(nn.Module):
+    def __init__(self, d_model, h, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        self.d_head = d_model//h
+        self.h = h
+        
+        self.attention = nn.ModuleList([SelfAttention(d_model//h) for _ in range(h)])
+        self.output = nn.Linear(self.d_head*h, self.d_head*h, bias=False)
+        
+    def forward(self, x):
+        
+        B, T, D = x.shape
+        d_head = D // self.h
+        x = x.view(B, T, self.h, d_head)      # [B, T, h, d_head]
+        x = x.transpose(1, 2)            # [B, h, T, d_head]
+
+        attention_h = []
+        
+        for head_idx in range(self.h):
+            x_i = x[:, head_idx, :, :]
+            out_i, _ = self.attention[head_idx](x_i)
+            attention_h.append(out_i)
+        
+        attention = torch.cat(attention_h, dim=-1)
+
+        return self.output(attention)
+        
 if __name__ == "__main__":
     x = torch.randn(128, 512, 512)
 
