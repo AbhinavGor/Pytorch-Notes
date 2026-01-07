@@ -6,5 +6,10 @@ def test_transformer_block():
     
     transformer = TransformerBlock(1024, 8)
     
-    assert transformer(x).shape == x.shape
+    out = transformer(x)
+    assert out.shape == x.shape
+    
+    loss = out.sum()
+    
+    loss.backward()
     
