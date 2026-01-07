@@ -8,9 +8,9 @@ class MLP(nn.Module):
         
         self.d_model = d_model
         
-        self.linear1 = nn.Linear(self.d_model, self.d_model)
+        self.linear1 = nn.Linear(self.d_model, 4*self.d_model)
         self.activation1 = nn.ReLU()
-        self.linear2 = nn.Linear(self.d_model, self.d_model)
+        self.linear2 = nn.Linear(4*self.d_model, self.d_model)
         
         
     def forward(self, x):
