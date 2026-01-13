@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from attention import MultiHeadSelfAttention
+from transformers.attention import MultiHeadSelfAttention
 
 class MLP(nn.Module):
     def __init__(self, d_model):
@@ -28,8 +28,8 @@ class TransformerBlock(nn.Module):
         self.ln1 = nn.LayerNorm(d_model)
         self.ln2 = nn.LayerNorm(d_model)
         
-    def forward(self, x):
-        attention = self.mha(x)
+    def forward(self, x, causal=True):
+        attention = self.mha(x, causal=causal)
         
         norm1 = self.ln1(x+attention)
         
