@@ -9,13 +9,20 @@ class SelfAttention(nn.Module):
         self.k = nn.Linear(d_model, d_model, bias=False)  # W^K
         self.v = nn.Linear(d_model, d_model, bias=False)  # W^V
 
-    def forward(self, x):  # x: [B, T, D]
+    def forward(self, x, causal=False):  # x: [B, T, D]
+        B, T, D = x.shape
         Q = self.q(x)  # [B, T, D]
         K = self.k(x)  # [B, T, D]
         V = self.v(x)  # [B, T, D]
         
         d_k = K.size(-1)
         scores = torch.matmul(Q, K.transpose(1, 2)) / np.sqrt(d_k)   # [B, T, T]
+        
+        if causal:
+            # mask out positions j > i
+            mask = torch.triu(torch.ones(T, T, device=x.device, dtype=torch.bool), diagonal=1)
+            scores = scores.masked_fill(mask, float("-inf"))
+            
         weights = torch.softmax(scores, dim=-1)
         attention = torch.matmul(weights, V)
         
@@ -31,7 +38,7 @@ class MultiHeadSelfAttention(nn.Module):
         self.attention = nn.ModuleList([SelfAttention(d_model//h) for _ in range(h)])
         self.output = nn.Linear(self.d_head*h, self.d_head*h, bias=False)
         
-    def forward(self, x):
+    def forward(self, x, causal=False):
         
         B, T, D = x.shape
         d_head = D // self.h
@@ -42,7 +49,7 @@ class MultiHeadSelfAttention(nn.Module):
         
         for head_idx in range(self.h):
             x_i = x[:, head_idx, :, :]
-            out_i, _ = self.attention[head_idx](x_i)
+            out_i, _ = self.attention[head_idx](x_i, causal)
             attention_h.append(out_i)
         
         attention = torch.cat(attention_h, dim=-1)
