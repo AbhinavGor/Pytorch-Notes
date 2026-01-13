@@ -17,7 +17,7 @@ class MLP(nn.Module):
         return self.linear2(self.activation1(self.linear1(x)))
         
 class TransformerBlock(nn.Module):
-    def __init__(self, d_model, h, ):
+    def __init__(self, d_model, h):
         super().__init__()
         self.h = h
         self.d_model = d_model
