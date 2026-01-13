@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 
 from transformers.blocks import TransformerBlock
+from tiny_gpt.model_config import ModelConfig
 
 class CharTokenizer():
     def __init__(self, text_file):
@@ -40,6 +41,22 @@ class TinyGPT(nn.Module):
         self.transformer_blocks = nn.ModuleList([TransformerBlock(self.d_model, self.h) for _ in range(n_layers)])
         
         self.projection = nn.Linear(self.d_model, self.vocab_size)
+        
+    def __init__(self, config: ModelConfig):
+        super().__init__()
+        
+        self.d_model = config.d_model
+        self.n_layers = config.n_layer
+        self.vocab_size = config.vocab_size
+        self.block_size = config.block_size
+        self.h = config.n_head
+        
+        self.token_em = nn.Embedding(self.vocab_size, self.d_model)
+        self.pos_em = nn.Embedding(self.block_size, self.d_model)
+        
+        self.transformer_blocks = nn.ModuleList([TransformerBlock(self.d_model, self.h) for _ in range(self.n_layers)])
+        
+        self.projection = nn.Linear(self.d_model, self.vocab_size)
             
     def forward(self, x, causal=True):
         # x: [B, T] token ids
@@ -59,13 +76,13 @@ class TinyGPT(nn.Module):
         # final projection to vocab
         return self.projection(x)                    # [B, T, vocab_size]
 
-def get_batch(split):
+def get_batch(split, train_data, val_data, config: ModelConfig):
     # split: "train" or "val"
     source = train_data if split == "train" else val_data
     T = source.size(0)
-    ix = torch.randint(0, T - block_size - 1, (batch_size,))
-    x = torch.stack([source[i : i + block_size] for i in ix])          # [B, T]
-    y = torch.stack([source[i + 1 : i + 1 + block_size] for i in ix])  # [B, T]
+    ix = torch.randint(0, T - config.block_size - 1, (config.batch_size,))
+    x = torch.stack([source[i : i + config.block_size] for i in ix])          # [B, T]
+    y = torch.stack([source[i + 1 : i + 1 + config.block_size] for i in ix])  # [B, T]
     return x, y
 
 def evaluate(model, split="val", steps=50):
