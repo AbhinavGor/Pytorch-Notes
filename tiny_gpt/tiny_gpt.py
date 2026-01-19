@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from transformers.blocks import TransformerBlock
+from tiny_transformers.blocks import TransformerBlock
 from tiny_gpt.model_config import ModelConfig
 
 class CharTokenizer():

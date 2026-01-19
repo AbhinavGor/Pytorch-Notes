@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from transformers.attention import MultiHeadSelfAttention
+from tiny_transformers.attention import MultiHeadSelfAttention
 
 class MLP(nn.Module):
     def __init__(self, d_model):
